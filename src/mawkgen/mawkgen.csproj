@@ -1,0 +1,13 @@
+﻿<Project Sdk="Naratteu.SourceGenerator.Sdk/0.0.2">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="../external_dependencies/libmawk-1.0.5/src/app.dll" />
+    <Reference Include="app.dll" HintPath="../external_dependencies/libmawk-1.0.5/src/app.dll" />
+  </ItemGroup>
+</Project>

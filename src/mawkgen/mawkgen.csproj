@@ -1,13 +1,20 @@
-﻿<Project Sdk="Naratteu.SourceGenerator.Sdk/0.0.2">
+﻿<Project Sdk="Naratteu.SourceGenerator.Sdk/0.0.13">
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <Version>0.0.2</Version>
+    <Description>mawk source generator</Description>
+    <Authors>naratteu</Authors>
+    <RepositoryUrl>https://github.com/naratteu/mawkgen</RepositoryUrl>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="../external_dependencies/libmawk-1.0.5/src/app.dll" />
-    <Reference Include="app.dll" HintPath="../external_dependencies/libmawk-1.0.5/src/app.dll" />
+    <Reference Include="../external_dependencies/libmawk-1.0.5/src/app.dll" />
+    <None Include="../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
 </Project>

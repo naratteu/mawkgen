@@ -14,10 +14,10 @@ public class MawkGen : IIncrementalGenerator
     {
         context.RegisterPostInitializationOutput(ctx =>
         {
-            ctx.AddEmbeddedAttributeDefinition();
+            //ctx.AddEmbeddedAttributeDefinition();//todo: sdk net10 분석기 4.14.0~ 부터 사용가능
             ctx.AddSource("mawkgen.g.cs", /*lang=C#*/"""
                 namespace mawkgen;
-                [Microsoft.CodeAnalysis.Embedded]
+                //[Microsoft.CodeAnalysis.Embedded]//todo: sdk net10 분석기 4.14.0~ 부터 사용가능
                 class MawkAttribute(string awk) : System.Attribute;
                 """);
         });
@@ -34,7 +34,7 @@ public class MawkGen : IIncrementalGenerator
                             .WithAttributeLists([])
                             .WithModifiers([SyntaxFactory.Token(SyntaxKind.PartialKeyword)])
                             .WithMembers([SyntaxFactory.ParseMemberDeclaration("inner // <inner />")!])
-                        !).NormalizeWhitespace().ToFullString().Replace("inner // <inner />", "\r\n" + Exts.Run(awk, source.SemanticModel.SyntaxTree.ToString()));
+                        !).NormalizeWhitespace().ToFullString().Replace("inner // <inner />", "\r\n" + Exts.Run(awk, source.SemanticModel.SyntaxTree.ToString().Replace("\r\n", "\n")));
                     spc.AddSource($"{source.TargetSymbol}{i}.g.cs", SourceText.From(ps, Encoding.UTF8));
                 }
             }

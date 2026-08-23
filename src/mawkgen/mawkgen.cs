@@ -1,4 +1,4 @@
-﻿namespace mawkgen;
+namespace mawkgen;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -34,8 +34,14 @@ public class MawkGen : IIncrementalGenerator
                             .WithAttributeLists([])
                             .WithModifiers([SyntaxFactory.Token(SyntaxKind.PartialKeyword)])
                             .WithMembers([SyntaxFactory.ParseMemberDeclaration("inner // <inner />")!])
-                        !).NormalizeWhitespace().ToFullString().Replace("inner // <inner />", "\r\n" + Exts.Run(awk, source.SemanticModel.SyntaxTree.ToString().Replace("\r\n", "\n")));
-                    spc.AddSource($"{source.TargetSymbol}{i}.g.cs", SourceText.From(ps, Encoding.UTF8));
+                        !).NormalizeWhitespace().ToFullString().Split(["inner // <inner />"], default) is [var a, var b] ? (a, b) : throw new();
+                    byte[] buffer = [
+                        ..a.ToUtf8LfNullTerminated(),
+                        .."\n"u8,
+                        ..Exts.Run(awk, source.SemanticModel.SyntaxTree.ToString()),
+                        ..b.ToUtf8LfNullTerminated(),
+                    ];
+                    spc.AddSource($"{source.TargetSymbol}{i}.g.cs", SourceText.From(buffer, buffer.Length, Encoding.UTF8));
                 }
             }
         });
@@ -53,12 +59,12 @@ file static class Exts
         _ => m
     };
 
-    public unsafe static string Run(string script, string input)
+    public unsafe static IEnumerable<byte> Run(string script, string input)
     {
         fixed (byte*
             app = "lmawk\0"u8,
-            sc = script.ToUtf8LfNullTerminated().ToArray(),
-            i = input.ToUtf8LfNullTerminated().ToArray())
+            sc = (byte[])[.. script.ToUtf8LfNullTerminated(), 0],
+            i = (byte[])[.. input.ToUtf8LfNullTerminated(), 0])
         {
             List<byte> output = [];
             var m = libmawk_initialize_stage1();
@@ -82,11 +88,11 @@ file static class Exts
             {
                 libmawk_uninitialize(m);
             }
-            return Encoding.UTF8.GetString([.. output]).Replace("\n", "\r\n");
+            return output;
         }
     }
 
-    static IEnumerable<byte> ToUtf8LfNullTerminated(this string text)
+    public static IEnumerable<byte> ToUtf8LfNullTerminated(this string text)
     {
         var utf8 = Encoding.UTF8.GetEncoder();
         var cc = new char[1];
@@ -98,7 +104,6 @@ file static class Exts
             for (int i = 0, cnt = utf8.GetBytes(cc, 0, 1, bb, 0, false); i < cnt; i++)
                 yield return bb[i];
         }
-        yield return 0; // 널 종료
         //todo: GetByteCount+1로 적당한 버퍼 생성후 씌우는게 더 효율적일듯
     }
 }

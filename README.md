@@ -29,7 +29,7 @@ Console.WriteLine(string.Join(", ", Temp.Ints()));
 [Mawk("""
 /#region Ints$/ { Ints=1; print "public static partial int[] Ints() => [" ; next }
 /#endregion Ints$/ { Ints=0; print "];"; next }
-Ints { print "  " $4 "," }
+Ints { print "  " \$4 "," }
 """)]
 static partial class Temp
 {

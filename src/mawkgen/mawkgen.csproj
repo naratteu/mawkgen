@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <Version>0.0.2</Version>
     <Description>mawk source generator</Description>
     <Authors>naratteu</Authors>
     <RepositoryUrl>https://github.com/naratteu/mawkgen</RepositoryUrl>

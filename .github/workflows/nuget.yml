@@ -1,0 +1,17 @@
+on:
+  push:
+    tags: [ '*' ]
+jobs:
+  push-nuget:
+    permissions:
+      id-token: write  # enable GitHub OIDC token issuance for this job
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: NuGet/login@v1
+      id: login
+      with:
+        user: naratteu
+    - run: dotnet cake.cs -t Push --tag="${GITHUB_REF_NAME#v}"
+      env:
+        NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}

@@ -8,6 +8,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v7
+    - name: Install clang 14
+      run: sudo apt-get update && sudo apt-get install -y clang-14
     - uses: NuGet/login@v1
       id: login
       with:

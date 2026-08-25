@@ -75,7 +75,8 @@ Task("DownloadDependencies")
     {
         if (!System.IO.File.Exists(libmawkArchive))
         {
-            Download("https://repo.hu/projects/releases/libmawk-1.0.5.tar.gz", libmawkArchive);
+            //Download("https://repo.hu/projects/releases/libmawk-1.0.5.tar.gz", libmawkArchive);
+            Download("https://github.com/naratteu/mawkgen/releases/download/v0.0.3/libmawk-1.0.5.tar.gz", libmawkArchive);
         }
 
         EnsureDirectoryExists(libmawkDirectory);
@@ -96,8 +97,8 @@ Task("BuildLibMawk")
         return;
     }
 
-    RunUnixCommand("./configure", libmawkDirectory, _ => { });
-    RunUnixCommand("make", libmawkDirectory, args => args.Append("install"));
+    RunUnixCommand("sh", libmawkDirectory, args => args.Append("./configure"));
+    RunUnixCommand("make", libmawkDirectory, _ => { });
 });
 
 Task("GenerateAppDll")
@@ -125,7 +126,7 @@ Task("GenerateAppDll")
     Run("dotnet", $"{libmawkDirectory}/src", args =>
     {
         args.Append("run")
-            .Append("--project").AppendQuoted("../Iril/Cli/Cli.csproj")
+            .Append("--project").AppendQuoted("../../Iril/Cli/Cli.csproj")
             .Append("--")
             .Append("-Ilibmawk")
             .Append("example_apps/30_out_pipes/app.c");

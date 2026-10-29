@@ -1,10 +1,13 @@
 # mawkgen
-mawk 소스제너레이터
+
+[![nuget](https://img.shields.io/nuget/v/mawkgen)](https://www.nuget.org/packages/mawkgen)
+
+mawk 소스제너레이터. 붙여넣으면 바로 돕니다.
+(Roslyn 4.8 이상이 필요합니다 — .NET 10 · 9 SDK 에서 확인했습니다)
 
 ```bash
 dotnet run - <<EOF
-#:package Microsoft.Net.Compilers.Toolset@5.3.0
-#:package mawkgen@0.0.2
+#:package mawkgen@0.0.4
 using mawkgen;
 
 Temp.Hello();
@@ -18,8 +21,7 @@ static partial class Temp{}
 EOF
 
 dotnet run - <<EOF
-#:package Microsoft.Net.Compilers.Toolset@5.3.0
-#:package mawkgen@0.0.2
+#:package mawkgen@0.0.4
 using mawkgen;
 
 Console.WriteLine(string.Join(", ", Temp.Ints()));
@@ -42,4 +44,14 @@ static partial class Temp
     public static partial int[] Ints();
 }
 EOF
+```
+
+출력은 각각 이렇습니다.
+
+```
+Hello, Mawk!
+```
+```
+1, 2, 3
+1, 10, 3
 ```

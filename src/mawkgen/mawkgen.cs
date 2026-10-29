@@ -10,6 +10,9 @@ using static app.Globals;
 [Generator]
 public class MawkGen : IIncrementalGenerator
 {
+    /// <summary>껍데기 안에 mawk 출력을 끼워넣을 자리. 이 자리를 Split 으로 찾아 가른다.</summary>
+    const string Hole = "inner // <inner />";
+
     void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(ctx =>
@@ -18,7 +21,7 @@ public class MawkGen : IIncrementalGenerator
             ctx.AddSource("mawkgen.g.cs", /*lang=C#*/"""
                 namespace mawkgen;
                 //[Microsoft.CodeAnalysis.Embedded]//todo: sdk net10 분석기 4.14.0~ 부터 사용가능
-                class MawkAttribute(string awk) : System.Attribute;
+                class MawkAttribute(string awk) : System.Attribute { public string Awk { get; } = awk; }
                 """);
         });
         var attr = context.SyntaxProvider.ForAttributeWithMetadataName("mawkgen.MawkAttribute", (_, _) => true, (c, _) => c);
@@ -28,20 +31,28 @@ public class MawkGen : IIncrementalGenerator
             {
                 if (v.ConstructorArguments is [{ Value: string awk }])
                 {
+                    // SyntaxList<T>/SyntaxTokenList 에는 컬렉션 표현식을 쓰지 않는다.
+                    // Roslyn 5 부터 [CollectionBuilder] 가 붙어서 [x] 가 동작하지만,
+                    // 4.x 에는 없어서 비변경 Add 의 반환값이 버려지며 '조용히 빈 목록'이 된다.
+                    // 그러면 partial 수정자와 멤버가 통째로 사라져 아래 Split 이 깨진다.
                     var ps = Exts.ParentStack(
                         source.TargetNode.Parent,
                         (source.TargetNode as TypeDeclarationSyntax)?
-                            .WithAttributeLists([])
-                            .WithModifiers([SyntaxFactory.Token(SyntaxKind.PartialKeyword)])
-                            .WithMembers([SyntaxFactory.ParseMemberDeclaration("inner // <inner />")!])
-                        !).NormalizeWhitespace().ToFullString().Split(["inner // <inner />"], default) is [var a, var b] ? (a, b) : throw new();
+                            .WithAttributeLists(default)
+                            .WithModifiers(SyntaxFactory.TokenList(SyntaxFactory.Token(SyntaxKind.PartialKeyword)))
+                            .WithMembers(SyntaxFactory.SingletonList(SyntaxFactory.ParseMemberDeclaration(Hole)!))
+                        !).NormalizeWhitespace().ToFullString().Split([Hole], default) is [var a, var b] ? (a, b)
+                        : throw new InvalidOperationException($"'{source.TargetSymbol}' 를 감쌀 껍데기를 만들지 못했습니다. 자리표시자 \"{Hole}\" 가 정규화 결과에 없습니다.");
                     byte[] buffer = [
                         ..a.ToUtf8LfNullTerminated(),
                         .."\n"u8,
                         ..Exts.Run(awk, source.SemanticModel.SyntaxTree.ToString()),
                         ..b.ToUtf8LfNullTerminated(),
                     ];
-                    spc.AddSource($"{source.TargetSymbol}{i}.g.cs", SourceText.From(buffer, buffer.Length, Encoding.UTF8));
+                    // canBeEmbedded 를 켜지 않으면 EmbedUntrackedSources(SDK 기본값) 가 생성 소스를
+                    // PDB 에 묻으려 할 때 Roslyn 4.x 에서 컴파일러가 죽는다.
+                    //   System.ArgumentException: SourceText cannot be embedded.
+                    spc.AddSource($"{source.TargetSymbol}{i}.g.cs", SourceText.From(buffer, buffer.Length, Encoding.UTF8, canBeEmbedded: true));
                 }
             }
         });
@@ -53,9 +64,9 @@ file static class Exts
     public static MemberDeclarationSyntax ParentStack(SyntaxNode? p, MemberDeclarationSyntax m) => p switch
     {
         BaseNamespaceDeclarationSyntax n
-            => ParentStack(n.Parent, n.WithMembers([m])),
+            => ParentStack(n.Parent, n.WithMembers(SyntaxFactory.SingletonList(m))),
         TypeDeclarationSyntax t
-            => ParentStack(t.Parent, t.WithMembers([m])),
+            => ParentStack(t.Parent, t.WithMembers(SyntaxFactory.SingletonList(m))),
         _ => m
     };
 

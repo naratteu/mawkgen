@@ -1,4 +1,6 @@
-﻿<Project Sdk="Naratteu.SourceGenerator.Sdk/0.0.13">
+<Project>
+
+  <Import Project="Sdk.props" Sdk="Naratteu.SourceGenerator.Sdk" Version="0.0.13" />
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -16,4 +18,29 @@
     <Reference Include="../external_dependencies/libmawk-1.0.5/src/app.dll" />
     <None Include="../../README.md" Pack="true" PackagePath="" />
   </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Naratteu.SourceGenerator.Sdk" Version="0.0.13" />
+
+  <!-- SDK 가 박아둔 Roslyn 5.3.0 을 낮춘다.
+       분석기가 참조하는 Roslyn 이 돌고있는 컴파일러보다 높으면 CS9057 로 통째로
+       건너뛰어진다. 5.3 을 참조하면 .NET 10 SDK(Roslyn 5.6) 에서만 동작하고
+       .NET 9 SDK(4.14) · 8 SDK 에서는 생성기가 아예 안 돈다.
+       SDK 가 Sdk.targets 에서 PackageReference 를 추가하므로, Sdk 속성 대신
+       Import 를 직접 적어서 그 뒤에서 Update 해야 먹는다. -->
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
+  </ItemGroup>
+
+  <!-- 생성기 dll 을 참조 dll(app.dll) 과 같은 디렉터리에 둔다.
+       SDK 기본값은 BuildOutputTargetFolder 아래 TFM 폴더까지 만들어서
+       analyzers/dotnet/cs/netstandard2.0/mawkgen.dll 로 들어가는데,
+       app.dll 은 analyzers/dotnet/cs/ 에 있어 한 단계 어긋난다.
+       Roslyn 5 는 그래도 찾아내지만 4.x 는 app 을 못 찾아 FileNotFoundException 이 난다. -->
+  <PropertyGroup>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(OutputPath)$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
 </Project>
